@@ -28,7 +28,7 @@ def capturewithretry(windowid, retries=5):
     while True:
         try:
             return capturewindow(windowid)
-        except SystemError:
+        except ChildProcessError:
             retries -= 1
             if retries == 0:
                 raise
@@ -45,9 +45,9 @@ def capturewindow(windowid):
     cap = subprocess.Popen(capcmd, stdout=subprocess.PIPE,
                            stderr=subprocess.PIPE)
     image = cap.communicate()[0]
-    if cap.poll():
-        raise SystemError("Failed to capture the window: {0}"
-                          .format(cap.returncode))
+    if cap.wait():
+        raise ChildProcessError("Failed to capture the window: {0}"
+                                .format(cap.returncode))
     return image
 
 
@@ -62,7 +62,7 @@ def convertimage(image):
     conv = subprocess.Popen(convcmd, stdin=subprocess.PIPE,
                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     newimage = conv.communicate(image)[0]
-    if conv.poll():
-        raise SystemError("Failed to convert the image: {0}"
-                          .format(conv.returncode))
+    if conv.wait():
+        raise ChildProcessError("Failed to convert the image: {0}"
+                                .format(conv.returncode))
     return newimage
