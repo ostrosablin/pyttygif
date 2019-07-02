@@ -43,7 +43,7 @@ def capturewindow(windowid):
     """
     capcmd = ['xwd', '-silent', '-id', windowid]
     cap = subprocess.Popen(capcmd, stdout=subprocess.PIPE,
-                           stderr=subprocess.PIPE)
+                           stderr=subprocess.PIPE, bufsize=-1)
     image = cap.communicate()[0]
     if cap.wait():
         raise ChildProcessError("Failed to capture the window: {0}"
@@ -60,7 +60,8 @@ def convertimage(image):
     """
     convcmd = ['convert', 'xwd:-', 'gif:-']
     conv = subprocess.Popen(convcmd, stdin=subprocess.PIPE,
-                            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                            bufsize=-1)
     newimage = conv.communicate(image)[0]
     if conv.wait():
         raise ChildProcessError("Failed to convert the image: {0}"
