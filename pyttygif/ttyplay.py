@@ -60,7 +60,6 @@ class TtyPlay(object):
         """
         Walk through the ttyrec file and calculate lengths of all frames.
 
-        :param last_frame: Length to assign to the last frame.
         :return: List, containing delays for each frame.
         """
         self.file.seek(0)

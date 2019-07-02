@@ -65,8 +65,8 @@ def gif_frames_worker(taskqueue, resultqueue, nextqueue):
         frmno, img = task
         try:
             frame = capture.convertimage(img)
-        except ChildProcessError as e:
-            resultqueue.put(e)
+        except ChildProcessError as exc:
+            resultqueue.put(exc)
             sys.exit(1)
         nextqueue.put((frmno, frame))  # Push prepared frame to build final GIF
 
@@ -96,8 +96,8 @@ def gif_build_worker(taskqueue, resultqueue, gifbldr):
                 while curfrm in pending:
                     gifbldr.add_image(pending.pop(curfrm))
                     curfrm += 1
-        except ChildProcessError as e:
-            resultqueue.put(e)
+        except ChildProcessError as exc:
+            resultqueue.put(exc)
             sys.exit(1)
 
 
@@ -240,6 +240,7 @@ try:
         while True:
             try:
                 framequeue.put((gifframe, image), True, 1)
+                gifframe += 1
                 break
             except queue.Full as e:
                 pass
@@ -247,7 +248,6 @@ try:
                 if not errorqueue.empty():
                     exception = errorqueue.get()
                     raise exception
-        gifframe += 1
 except ChildProcessError as e:
     clear_screen()
     print("Main processing loop failed:")

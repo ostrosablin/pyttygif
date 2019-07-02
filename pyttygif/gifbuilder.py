@@ -30,7 +30,7 @@ class GifBuilder(object):
         :param optimize: Optimization level of GIF (0-3).
         :param conserve_memory: Whether to save RAM at cost of processing time.
         """
-        cmd = ['gifsicle', '--nextfile',
+        cmd = ['gifsicle', '--nextfile', '--no-comments',
                '--{0}conserve-memory'.format('' if conserve_memory else 'no-')]
         if loop <= 0:
             cmd.append('--loopcount')
