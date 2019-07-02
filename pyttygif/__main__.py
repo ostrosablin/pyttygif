@@ -232,7 +232,7 @@ try:
         # Let the terminal emulator draw the frame. Without this it's possible
         # to capture partial draws. It's not a strict guarantee, but seems to
         # work reasonably well.
-        time.sleep(0.01)
+        time.sleep(0.017)
         # Capture the image of terminal and queue it for GIF convert
         image = capture.capturewithretry(windowid)
         while True:
