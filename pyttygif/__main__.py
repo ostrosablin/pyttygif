@@ -130,6 +130,8 @@ advgroup.add_argument('-b', '--max-backlog',
                       help="In-RAM image backlog size (0 = infinite)")
 advgroup.add_argument('-D', '--dirty', default=False, action='store_true',
                       help="Don't clear screen before record")
+advgroup.add_argument('-f', '--fps', default=25, type=int,
+                      help="How many frames to screenshot per second")
 
 try:
     args = parser.parse_args()
@@ -232,7 +234,7 @@ try:
         # Let the terminal emulator draw the frame. Without this it's possible
         # to capture partial draws. It's not a strict guarantee, but seems to
         # work reasonably well.
-        time.sleep(0.017)
+        time.sleep(1.0 / args.fps)
         # Capture the image of terminal and queue it for GIF convert
         image = capture.capturewithretry(windowid)
         while True:
