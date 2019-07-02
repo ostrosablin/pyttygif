@@ -48,9 +48,8 @@ class GifBuilder(object):
         cmd.append(path)
         cmd.append('--done')
         self.cmd = cmd
-        self.gifsicle = subprocess.Popen(self.cmd, stdin=subprocess.PIPE,
-                                         stdout=subprocess.PIPE,
-                                         stderr=subprocess.PIPE)
+        self.gifsicle = None
+        self.closed = False
 
     @staticmethod
     def gifdelay(s):
@@ -61,6 +60,20 @@ class GifBuilder(object):
         :return: Integer, representing the delay in GIF format.
         """
         return round(s * 100)
+
+    def start(self):
+        """
+        Start the gifsicle process.
+
+        :return: None.
+        """
+        try:
+            self.gifsicle = subprocess.Popen(self.cmd, stdin=subprocess.PIPE,
+                                             stdout=subprocess.PIPE,
+                                             stderr=subprocess.PIPE,
+                                             bufsize=-1)
+        except FileNotFoundError:
+            raise ChildProcessError("Gifsicle doesn't seem to be installed")
 
     def add_image(self, image):
         """
