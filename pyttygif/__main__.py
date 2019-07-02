@@ -18,11 +18,10 @@ import os
 import sys
 import time
 import shutil
-import queue
-import threading
 import subprocess
 import multiprocessing
 import datetime
+import queue
 
 from pyttygif import ttyplay, capture, gifbuilder
 
@@ -53,28 +52,26 @@ def clear_screen():
         subprocess.check_call(cmd)
 
 
-def gif_frames_worker():
+def gif_frames_worker(taskqueue, resultqueue, nextqueue):
     """
     Worker for converting GIF frames.
 
     :return: None.
     """
     while True:
-        task = fq.get()
+        task = taskqueue.get()
         if task is None:
-            break
+            sys.exit(0)
         frmno, img = task
         try:
             frame = capture.convertimage(img)
-        except (SystemError, BrokenPipeError):
-            eq.put(sys.exc_info())
-            fq.task_done()
-            return
-        gq.put((frmno, frame))  # Push prepared frame to build final GIF
-        fq.task_done()
+        except ChildProcessError as e:
+            resultqueue.put(e)
+            sys.exit(1)
+        nextqueue.put((frmno, frame))  # Push prepared frame to build final GIF
 
 
-def gif_build_worker():
+def gif_build_worker(taskqueue, resultqueue, gifbldr):
     """
     Worker for building final GIF.
 
@@ -82,26 +79,26 @@ def gif_build_worker():
     """
     curfrm = 1
     pending = {}
+    gif.start()
     while True:
-        task = gq.get()
-        if task is None:
-            break
-        frmno, frame = task
+        task = taskqueue.get()
         try:
+            if task is None:
+                gif.close()
+                sys.exit(0)
+            frmno, frame = task
             if frmno == curfrm:
-                gif.add_image(frame)
+                gifbldr.add_image(frame)
                 curfrm += 1
             else:
                 pending[frmno] = frame
             if pending:
                 while curfrm in pending:
-                    gif.add_image(pending.pop(curfrm))
+                    gifbldr.add_image(pending.pop(curfrm))
                     curfrm += 1
-        except (SystemError, BrokenPipeError):
-            eq.put(sys.exc_info())
-            gq.task_done()
-            return
-        gq.task_done()
+        except ChildProcessError as e:
+            resultqueue.put(e)
+            sys.exit(1)
 
 
 # Arg parsing and initial handling
@@ -115,11 +112,11 @@ maingroup.add_argument('output', default=None,
                        help="Path to save the resulting GIF")
 maingroup.add_argument('-s', '--speed', default=1.0,
                        type=float, help="Speed multiplier")
-maingroup.add_argument('-r', '--repeat', default=1, type=int,
-                       help="Number of times to repeat the GIF (0 = infinity)")
+maingroup.add_argument('-l', '--loop', default=1, type=int,
+                       help="Number of times to play the GIF (0 = infinity)")
 
 advgroup = parser.add_argument_group("Advanced options")
-advgroup.add_argument('-l', '--lastframe', default=5.0, type=float,
+advgroup.add_argument('-L', '--lastframe', default=5.0, type=float,
                       help="How long to display the last frame")
 advgroup.add_argument('-m', '--no-conserve-memory', default=False,
                       action='store_true', help="Use more RAM for speedup")
@@ -138,14 +135,14 @@ try:
     args = parser.parse_args()
 except argparse.ArgumentError:
     parser.print_help()
-    exit(0)
+    sys.exit(0)
 
 if not args.input:
     print("Input ttyrec file omitted, nothing to do.")
-    exit(1)
+    sys.exit(1)
 if not args.output:
     print("Output file not specified, nothing to do.")
-    exit(1)
+    sys.exit(1)
 if not args.no_disable_screensaver:
     DEPENDS_ON.append("xdg-screensaver")
 
@@ -153,18 +150,18 @@ if not args.no_disable_screensaver:
 windowid = os.getenv('WINDOWID')
 if not windowid:
     print("Couldn't get WINDOWID environment variable, quitting...")
-    exit(1)
+    sys.exit(1)
 try:
     int(windowid)
 except ValueError:
     print("WINDOWID environment variable should be an integer")
-    exit(1)
+    sys.exit(1)
 
 # Check that all required CLI tools are present
 for util in DEPENDS_ON:
     if not shutil.which(util):
         print("Required utility missing: {0}".format(util))
-        exit(1)
+        sys.exit(1)
 
 time_start = time.time()
 tp = ttyplay.TtyPlay(args.input, args.speed)  # Create a tty player
@@ -188,7 +185,7 @@ for delay in delays:
     vislength = 0.0
 
 # Make a GIF builder with pre-computed frame delays.
-gif = gifbuilder.GifBuilder(args.output, gifdelays, args.repeat,
+gif = gifbuilder.GifBuilder(args.output, gifdelays, args.loop,
                             args.optimize_level,
                             not args.no_conserve_memory)
 
@@ -200,19 +197,25 @@ if not args.dirty:
 vislength = 0.0
 gifframe = 1  # GIF frame counter is used to reorder frames back.
 
-# We use threads to convert frames and build GIF for speedup.
-fq = queue.Queue(args.max_backlog)
-threads = []
+# We use worker processes to convert frames and build GIF for speedup.
+framequeue = multiprocessing.Queue(args.max_backlog)
+# This queue is used to report exceptions from workers.
+errorqueue = multiprocessing.Queue()
+# This queue is used to pass converted frames to GIF builder.
+gifqueue = multiprocessing.Queue(args.max_backlog)
+workers = []
 for i in range(multiprocessing.cpu_count()):
-    t = threading.Thread(target=gif_frames_worker)
-    t.daemon = True
-    t.start()
-    threads.append(t)
-gq = queue.Queue(args.max_backlog)
-eq = queue.Queue()  # This queue is used to report exceptions from workers
+    p = multiprocessing.Process(target=gif_frames_worker,
+                                args=(framequeue, errorqueue, gifqueue))
+    p.daemon = True
+    p.start()
+    workers.append(p)
 
-builder = threading.Thread(target=gif_build_worker)
+builder = multiprocessing.Process(target=gif_build_worker,
+                                  args=(gifqueue, errorqueue, gif))
+builder.daemon = True
 builder.start()
+workers.append(builder)
 
 if not args.no_disable_screensaver:  # Inhibit screen lock
     toggle_screensaver(windowid)
@@ -222,7 +225,7 @@ try:
     while tp.read_frame():
         tp.display_frame()
         vislength += delays[tp.frameno - 1]
-        if vislength <= 0.01:  # Gif counts in hundredths of seconds
+        if vislength <= 0.01:  # GIF counts delays in hundredths of seconds
             continue  # We discard frames that are less than this.
         else:
             vislength = 0.0
@@ -232,44 +235,62 @@ try:
         time.sleep(0.01)
         # Capture the image of terminal and queue it for GIF convert
         image = capture.capturewithretry(windowid)
-        fq.put((gifframe, image))
+        while True:
+            try:
+                framequeue.put((gifframe, image), True, 1)
+                break
+            except queue.Full as e:
+                pass
+            finally:
+                if not errorqueue.empty():
+                    exception = errorqueue.get()
+                    raise exception
         gifframe += 1
-        if not eq.empty():
-            exc_info = eq.get()
-            raise exc_info[1].with_traceback(exc_info[2])
-except (ValueError, SystemError, BrokenPipeError) as e:
+except ChildProcessError as e:
     clear_screen()
     print("Main processing loop failed:")
     print("{0}: {1}".format(type(e).__name__, e))
-    exit(1)
+    sys.exit(1)
 except KeyboardInterrupt:
     time.sleep(0.1)
     clear_screen()
     print("User has cancelled rendering")
-    exit(1)
+    sys.exit(1)
+
+# Finish processing and stop worker processes.
+clear_screen()
+for _ in range(len(workers)-1):
+    framequeue.put(None, True, 1)
+gifqueue.put(None, True, 1)
+print("Building the resulting GIF...\n")
+while True:
+    all_quit = True
+    all_consumed = False
+    if framequeue.empty() and gifqueue.empty():
+        all_consumed = True
+    for w in workers:
+        if not w.is_alive():
+            if w.exitcode:
+                print("Worker {0} has died".format(w.name))
+                sys.exit(1)
+        else:
+            all_quit = False
+    if not errorqueue.empty():
+        exception = errorqueue.get()
+        print("Worker has encountered an error:")
+        print("{0}: {1}".format(type(exception).__name__, exception))
+        sys.exit(1)
+    if all_quit and all_consumed:
+        break
+    time.sleep(0.1)
 
 if not args.no_disable_screensaver:  # Reenable screen lock
     toggle_screensaver(windowid, True)
-
-# Finish processing and stop worker threads.
-fq.join()
-for t in threads:
-    fq.put(None)
-for t in threads:
-    t.join()
-
-gq.join()
-gq.put(None)
-builder.join()
-
-# Close the GifBuilder to write the GIF to disk.
-gif.close()
 
 # Close ttyrec file.
 tp.close()
 
 # Print stats and quit:
-clear_screen()
 time_end = time.time()
 out_frames = len(gifdelays)
 giflength = sum(filter(lambda x: round(x * 100) / 100, gifdelays))
