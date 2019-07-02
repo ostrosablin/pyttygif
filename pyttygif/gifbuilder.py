@@ -114,10 +114,14 @@ class GifBuilder(object):
 
         :return: None.
         """
+        if self.gifsicle is None:
+            return
         self.gifsicle.stdin.close()
+        self.closed = True
         ret = self.gifsicle.wait()
         if ret:
-            raise ValueError("Failed to build GIF: {0}".format(ret))
+            raise ChildProcessError("Failed to build GIF: {0}"
+                                    .format(ret))
 
     def __enter__(self):
         """
