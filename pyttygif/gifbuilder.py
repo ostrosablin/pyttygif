@@ -82,7 +82,31 @@ class GifBuilder(object):
         :param image: Bytes, representing the GIF image frame.
         :return: None.
         """
-        self.gifsicle.stdin.write(image)
+        if self.closed:
+            raise ChildProcessError("Write to closed GifBuilder")
+        if self.gifsicle is None:
+            raise ChildProcessError("Gifsicle process is not started yet")
+        try:
+            self.gifsicle.stdin.write(image)
+        except BrokenPipeError as e:
+            self.gifsicle.stdin.close()
+            self.terminate()
+            ret = self.gifsicle.wait()
+            if ret is not None:
+                raise ChildProcessError("Gifsicle exited unexpectedly "
+                                        "with code {0}".format(ret)) from e
+
+    def terminate(self):
+        """
+        Terminate the gifsicle process non-gracefully.
+
+        :return: None.
+        """
+        if self.gifsicle is None:
+            return
+        self.gifsicle.terminate()
+        self.gifsicle.poll()
+        self.closed = True
 
     def close(self):
         """
