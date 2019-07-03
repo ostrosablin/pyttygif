@@ -89,9 +89,9 @@ class GifBuilder(object):
         try:
             self.gifsicle.stdin.write(image)
         except BrokenPipeError as e:
-            self.gifsicle.stdin.close()
             self.terminate()
             ret = self.gifsicle.wait()
+            self.gifsicle = None
             if ret is not None:
                 raise ChildProcessError("Gifsicle exited unexpectedly "
                                         "with code {0}".format(ret)) from e
