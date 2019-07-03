@@ -299,6 +299,8 @@ giflength = sum(filter(lambda x: round(x * 100) / 100, gifdelays))
 print("Stats:\n")
 print("Rendered GIF in {0}".format(
     str(datetime.timedelta(seconds=time_end-time_start))))
+print("ttyrec duration (original speed): {0}".format(
+    str(datetime.timedelta(seconds=sum(delays[:-1]*args.speed)))))
 print("ttyrec duration: {0}".format(
     str(datetime.timedelta(seconds=sum(delays[:-1])))))
 print("GIF duration: {0}".format(
