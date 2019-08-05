@@ -132,6 +132,8 @@ advgroup.add_argument('-D', '--dirty', default=False, action='store_true',
                       help="Don't clear screen before record")
 advgroup.add_argument('-f', '--fps', default=25, type=int,
                       help="How many frames to screenshot per second")
+advgroup.add_argument('-c', '--delaycap', default=float('+inf'), type=float,
+                      help="Limit the max frame display time in seconds")
 
 try:
     args = parser.parse_args()
@@ -183,7 +185,7 @@ for delay in delays:
     vislength += delay
     if vislength <= 0.01:
         continue
-    gifdelays.append(vislength)
+    gifdelays.append(min(args.delaycap, vislength))
     vislength = 0.0
 
 # Make a GIF builder with pre-computed frame delays.

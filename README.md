@@ -71,6 +71,8 @@ Finally, you can convert a ttyrec like that:
                             In-RAM image backlog size (0 = infinite)
       -D, --dirty           Don't clear screen before record
       -f FPS, --fps FPS     How many frames to screenshot per second
+      -c DELAYCAP, --delaycap DELAYCAP
+                            Limit the max frame display time in seconds
 
 For the most basic usage, you only need to specify the required positional arguments (input ttyrec file path and output GIF file path). You can also specify **-s** to pass (floating point) speed multiplier to speed up or slow down the output GIF and **-l** to specify number of times to play the GIF (0 = infinity).
 
@@ -82,6 +84,7 @@ There's also a number of advanced options available.
 * pyttygif attempts to inhibit screensaver by default (so that you don't have to move mouse during recording of the GIF to prevent screenlocker). However, if you don't want that for some reason (or don't have xdg-screensaver installed) - you might want to override it with **-S** flag.
 * pyttygif clears the screen before recording it. However, if you want previous terminal content to be captured, you can pass in **-D** flag.
 * pyttygif doesn't have any way to sync to the terminal emulator (and it also wants to be as much terminal-agnostic as possible), so the only way around this problem is to sleep a fixed amount of time after each displayed frame to give the terminal emulator some time to render the contents. pyttygif defaults to the more or less safe value of 25 FPS (which is 0.04 seconds of sleep after each frame). However, depending on your machine, you might want to override this, for example, with 60 FPS. You can specify the FPS with **-f** option. But beware of setting this value too high - it's possible that pyttygif would actually capture the previous frame, which would cause stutters and frame skips in the output GIF.
+* If there's an excessively long delays in the input ttyrec (such as when user goes away from keyboard) - it's possible to cap such delays by passing **-c** option and specifying a maximum time in seconds that frame can take (floating point number). If any frame exceeds specified time - it's forcibly capped at that time. It defaults to positive infinity, that is, no capping.
 
 ## License
 
