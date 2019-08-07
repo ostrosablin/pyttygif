@@ -44,6 +44,7 @@ Finally, you can convert a ttyrec like that:
 
     usage: __main__.py [-h] [-s SPEED] [-l LOOP] [-L LASTFRAME] [-m]
                        [-o {0,1,2,3}] [-S] [-b MAX_BACKLOG] [-D] [-f FPS]
+                       [-c DELAYCAP]
                        input output
     
     Convert ttyrec to GIF animation
@@ -72,7 +73,7 @@ Finally, you can convert a ttyrec like that:
       -D, --dirty           Don't clear screen before record
       -f FPS, --fps FPS     How many frames to screenshot per second
       -c DELAYCAP, --delaycap DELAYCAP
-                            Limit the max frame display time in seconds
+                            Cap the display time of single frame (in seconds)
 
 For the most basic usage, you only need to specify the required positional arguments (input ttyrec file path and output GIF file path). You can also specify **-s** to pass (floating point) speed multiplier to speed up or slow down the output GIF and **-l** to specify number of times to play the GIF (0 = infinity).
 

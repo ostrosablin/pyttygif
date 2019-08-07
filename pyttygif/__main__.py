@@ -133,7 +133,7 @@ advgroup.add_argument('-D', '--dirty', default=False, action='store_true',
 advgroup.add_argument('-f', '--fps', default=25, type=int,
                       help="How many frames to screenshot per second")
 advgroup.add_argument('-c', '--delaycap', default=float('+inf'), type=float,
-                      help="Limit the max frame display time in seconds")
+                      help="Cap the display time of single frame (in seconds)")
 
 try:
     args = parser.parse_args()
