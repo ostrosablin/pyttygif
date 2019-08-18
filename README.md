@@ -44,8 +44,7 @@ Finally, you can convert a ttyrec like that:
 
     usage: __main__.py [-h] [-s SPEED] [-l LOOP] [-L LASTFRAME] [-m]
                        [-o {0,1,2,3}] [-S] [-b MAX_BACKLOG] [-D] [-f FPS]
-                       [-c DELAYCAP]
-                       [-x LOSSY]
+                       [-c DELAYCAP] [-x LOSSY]
                        input output
     
     Convert ttyrec to GIF animation
