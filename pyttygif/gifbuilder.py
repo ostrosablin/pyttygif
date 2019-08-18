@@ -20,7 +20,8 @@ class GifBuilder(object):
     """
     Wrapper around gifsicle CLI utility.
     """
-    def __init__(self, path, delays, loop=1, optimize=3, conserve_memory=True):
+    def __init__(self, path, delays, loop=1, optimize=3, conserve_memory=True,
+                 lossy=None):
         """
         Spawn a new gifsicle process.
 
@@ -32,6 +33,8 @@ class GifBuilder(object):
         """
         cmd = ['gifsicle', '--nextfile', '--no-comments',
                '--{0}conserve-memory'.format('' if conserve_memory else 'no-')]
+        if lossy is not None:
+            cmd.append('--lossy={0}'.format(str(lossy)))
         if loop <= 0:
             cmd.append('--loopcount')
         elif loop == 1:

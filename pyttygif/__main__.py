@@ -134,6 +134,8 @@ advgroup.add_argument('-f', '--fps', default=25, type=int,
                       help="How many frames to screenshot per second")
 advgroup.add_argument('-c', '--delaycap', default=float('+inf'), type=float,
                       help="Cap the display time of single frame (in seconds)")
+advgroup.add_argument('-x', '--lossy', default=None, type=int,
+                      help="Use gifsicle lossy GIF compression mode (0-100)")
 
 try:
     args = parser.parse_args()
@@ -191,7 +193,7 @@ for delay in delays:
 # Make a GIF builder with pre-computed frame delays.
 gif = gifbuilder.GifBuilder(args.output, gifdelays, args.loop,
                             args.optimize_level,
-                            not args.no_conserve_memory)
+                            not args.no_conserve_memory, args.lossy)
 
 # Clear screen before playback. The idea is to clear pyttygif invocation.
 if not args.dirty:
