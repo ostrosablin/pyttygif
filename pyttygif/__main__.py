@@ -28,6 +28,9 @@ from pyttygif import ttyplay, capture, gifbuilder
 # CLI tools that we absolutely depend on
 DEPENDS_ON = ['xwd', 'convert', 'clear', 'stty', 'reset', 'gifsicle']
 
+def print_err(*args, **kwargs):
+    print(*args, file=sys.stderr, **kwargs)
+
 
 def toggle_screensaver(win_id, enable=False):
     """
@@ -144,10 +147,10 @@ except argparse.ArgumentError:
     sys.exit(0)
 
 if not args.input:
-    print("Input ttyrec file omitted, nothing to do.")
+    print_err("Input ttyrec file omitted, nothing to do.")
     sys.exit(1)
 if not args.output:
-    print("Output file not specified, nothing to do.")
+    print_err("Output file not specified, nothing to do.")
     sys.exit(1)
 if not args.no_disable_screensaver:
     DEPENDS_ON.append("xdg-screensaver")
@@ -155,18 +158,18 @@ if not args.no_disable_screensaver:
 # Get WINDOWID for taking screenshots of terminal
 windowid = os.getenv('WINDOWID')
 if not windowid:
-    print("Couldn't get WINDOWID environment variable, quitting...")
+    print_err("Couldn't get WINDOWID environment variable, quitting...")
     sys.exit(1)
 try:
     int(windowid)
 except ValueError:
-    print("WINDOWID environment variable should be an integer")
+    print_err("WINDOWID environment variable should be an integer")
     sys.exit(1)
 
 # Check that all required CLI tools are present
 for util in DEPENDS_ON:
     if not shutil.which(util):
-        print("Required utility missing: {0}".format(util))
+        print_err("Required utility missing: {0}".format(util))
         sys.exit(1)
 
 time_start = time.time()
@@ -254,13 +257,13 @@ try:
                     raise exception
 except ChildProcessError as e:
     clear_screen()
-    print("Main processing loop failed:")
-    print("{0}: {1}".format(type(e).__name__, e))
+    print_err("Main processing loop failed:")
+    print_err("{0}: {1}".format(type(e).__name__, e))
     sys.exit(1)
 except KeyboardInterrupt:
     time.sleep(0.1)
     clear_screen()
-    print("User has cancelled rendering")
+    print_err("User has cancelled rendering")
     sys.exit(1)
 
 # Finish processing and stop worker processes.
@@ -268,7 +271,7 @@ clear_screen()
 for _ in range(len(workers)-1):
     framequeue.put(None, True, 1)
 gifqueue.put(None, True, 1)
-print("Building the resulting GIF...\n")
+print_err("Building the resulting GIF...\n")
 while True:
     all_quit = True
     all_consumed = False
@@ -277,14 +280,14 @@ while True:
     for w in workers:
         if not w.is_alive():
             if w.exitcode:
-                print("Worker {0} has died".format(w.name))
+                print_err("Worker {0} has died".format(w.name))
                 sys.exit(1)
         else:
             all_quit = False
     if not errorqueue.empty():
         exception = errorqueue.get()
-        print("Worker has encountered an error:")
-        print("{0}: {1}".format(type(exception).__name__, exception))
+        print_err("Worker has encountered an error:")
+        print_err("{0}: {1}".format(type(exception).__name__, exception))
         sys.exit(1)
     if all_quit and all_consumed:
         break
@@ -300,16 +303,16 @@ tp.close()
 time_end = time.time()
 out_frames = len(gifdelays)
 giflength = sum(filter(lambda x: round(x * 100) / 100, gifdelays))
-print("Stats:\n")
-print("Rendered GIF in {0}".format(
+print_err("Stats:\n")
+print_err("Rendered GIF in {0}".format(
     str(datetime.timedelta(seconds=time_end-time_start))))
-print("ttyrec duration (original speed): {0}".format(
+print_err("ttyrec duration (original speed): {0}".format(
     str(datetime.timedelta(seconds=sum(delays[:-1])*args.speed))))
-print("ttyrec duration: {0}".format(
+print_err("ttyrec duration: {0}".format(
     str(datetime.timedelta(seconds=sum(delays[:-1])))))
-print("GIF duration: {0}".format(
+print_err("GIF duration: {0}".format(
     str(datetime.timedelta(seconds=giflength))))
-print("Input frames from ttyrec: {0}".format(in_frames))
-print("Output frames in GIF: {0}".format(out_frames))
-print("Dropped frames: {0}\n".format(in_frames - out_frames))
-print("Done!")
+print_err("Input frames from ttyrec: {0}".format(in_frames))
+print_err("Output frames in GIF: {0}".format(out_frames))
+print_err("Dropped frames: {0}\n".format(in_frames - out_frames))
+print_err("Done!")
