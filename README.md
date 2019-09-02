@@ -75,7 +75,7 @@ Finally, you can convert a ttyrec like that:
       -c DELAYCAP, --delaycap DELAYCAP
                             Cap the display time of single frame (in seconds)
       -x LOSSY, --lossy LOSSY
-                            Use gifsicle lossy GIF compression mode (0-100)
+                            Use gifsicle lossy GIF compression mode
 
 For the most basic usage, you only need to specify the required positional arguments (input ttyrec file path and output GIF file path). You can also specify **-s** to pass (floating point) speed multiplier to speed up or slow down the output GIF and **-l** to specify number of times to play the GIF (0 = infinity).
 
@@ -88,7 +88,7 @@ There's also a number of advanced options available.
 * pyttygif clears the screen before recording it. However, if you want previous terminal content to be captured, you can pass in **-D** flag.
 * pyttygif doesn't have any way to sync to the terminal emulator (and it also wants to be as much terminal-agnostic as possible), so the only way around this problem is to sleep a fixed amount of time after each displayed frame to give the terminal emulator some time to render the contents. pyttygif defaults to the more or less safe value of 25 FPS (which is 0.04 seconds of sleep after each frame). However, depending on your machine, you might want to override this, for example, with 60 FPS. You can specify the FPS with **-f** option. But beware of setting this value too high - it's possible that pyttygif would actually capture the previous frame, which would cause stutters and frame skips in the output GIF.
 * If there's an excessively long delays in the input ttyrec (such as when user goes away from keyboard) - it's possible to cap such delays by passing **-c** option and specifying a maximum time in seconds that frame can take (floating point number). If any frame exceeds specified time - it's forcibly capped at that time. It defaults to positive infinity, that is, no capping.
-* If you have gifsicle 1.92 or newer, you can use lossy compression mode, which allows to produce even smaller GIFs by passing **-x** option and specify compression level (0-100), where higher level produces smaller GIFs at the cost of more artifacts.
+* If you have gifsicle 1.92 or newer, you can use lossy compression mode, which allows to produce even smaller GIFs by passing **-x** option and specify compression level, where higher level produces smaller GIFs at the cost of more artifacts.
 
 ## License
 

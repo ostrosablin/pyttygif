@@ -26,7 +26,7 @@ import queue
 from pyttygif import ttyplay, capture, gifbuilder
 
 # CLI tools that we absolutely depend on
-DEPENDS_ON = ['xwd', 'convert', 'clear', 'stty', 'reset', 'gifsicle']
+DEPENDS_ON = ['xwd', 'convert', 'clear', 'stty', 'gifsicle']
 
 def print_err(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
@@ -50,7 +50,7 @@ def clear_screen():
 
     :return: None.
     """
-    cmds = (('clear',), ('reset',), ('stty', 'sane'))
+    cmds = (('clear',), ('stty', 'sane'))
     for cmd in cmds:
         subprocess.check_call(cmd)
 
@@ -138,7 +138,7 @@ advgroup.add_argument('-f', '--fps', default=25, type=int,
 advgroup.add_argument('-c', '--delaycap', default=float('+inf'), type=float,
                       help="Cap the display time of single frame (in seconds)")
 advgroup.add_argument('-x', '--lossy', default=None, type=int,
-                      help="Use gifsicle lossy GIF compression mode (0-100)")
+                      help="Use gifsicle lossy GIF compression mode")
 
 try:
     args = parser.parse_args()

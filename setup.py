@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="pyttygif",
-    version="0.2.2",
+    version="0.2.3",
     author="Vitaly Ostrosablin",
     author_email="tmp6154@yandex.ru",
     description="ttyrec to GIF converter",
