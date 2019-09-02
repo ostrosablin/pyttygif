@@ -26,7 +26,7 @@ import queue
 from pyttygif import ttyplay, capture, gifbuilder
 
 # CLI tools that we absolutely depend on
-DEPENDS_ON = ['xwd', 'convert', 'clear', 'stty', 'gifsicle']
+DEPENDS_ON = ['xwd', 'convert', 'clear', 'stty', 'reset', 'gifsicle']
 
 def print_err(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
@@ -50,7 +50,7 @@ def clear_screen():
 
     :return: None.
     """
-    cmds = (('clear',), ('stty', 'sane'))
+    cmds = (('clear',), ('reset',), ('stty', 'sane'))
     for cmd in cmds:
         subprocess.check_call(cmd)
 
