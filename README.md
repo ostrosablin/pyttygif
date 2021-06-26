@@ -44,7 +44,7 @@ Finally, you can convert a ttyrec like that:
 
     usage: __main__.py [-h] [-s SPEED] [-l LOOP] [-L LASTFRAME] [-m]
                        [-o {0,1,2,3}] [-S] [-b MAX_BACKLOG] [-D] [-f FPS]
-                       [-c DELAYCAP] [-x LOSSY]
+                       [-c DELAYCAP] [-x LOSSY] [-e ENCODING]
                        input output
     
     Convert ttyrec to GIF animation
@@ -76,6 +76,8 @@ Finally, you can convert a ttyrec like that:
                             Cap the display time of single frame (in seconds)
       -x LOSSY, --lossy LOSSY
                             Use gifsicle lossy GIF compression mode
+      -e ENCODING, --encoding ENCODING
+                            Reencode ttyrec to match terminal (source:target)
 
 For the most basic usage, you only need to specify the required positional arguments (input ttyrec file path and output GIF file path). You can also specify **-s** to pass (floating point) speed multiplier to speed up or slow down the output GIF and **-l** to specify number of times to play the GIF (0 = infinity).
 
@@ -89,6 +91,7 @@ There's also a number of advanced options available.
 * pyttygif doesn't have any way to sync to the terminal emulator (and it also wants to be as much terminal-agnostic as possible), so the only way around this problem is to sleep a fixed amount of time after each displayed frame to give the terminal emulator some time to render the contents. pyttygif defaults to the more or less safe value of 25 FPS (which is 0.04 seconds of sleep after each frame). However, depending on your machine, you might want to override this, for example, with 60 FPS. You can specify the FPS with **-f** option. But beware of setting this value too high - it's possible that pyttygif would actually capture the previous frame, which would cause stutters and frame skips in the output GIF.
 * If there's an excessively long delays in the input ttyrec (such as when user goes away from keyboard) - it's possible to cap such delays by passing **-c** option and specifying a maximum time in seconds that frame can take (floating point number). If any frame exceeds specified time - it's forcibly capped at that time. It defaults to positive infinity, that is, no capping.
 * If you have gifsicle 1.92 or newer, you can use lossy compression mode, which allows to produce even smaller GIFs by passing **-x** option and specify compression level, where higher level produces smaller GIFs at the cost of more artifacts.
+* If your ttyrecs are in different encoding that your terminal (e.g. NetHack IBMgraphics aka CP437), you can re-encode ttyrec on-the-fly by passing **-e** option and specifying ttyrec encoding, followed by comma-separated current terminal encoding (e.g. **-e=cp437:utf-8**).
 
 ## License
 

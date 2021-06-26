@@ -139,6 +139,8 @@ advgroup.add_argument('-c', '--delaycap', default=float('+inf'), type=float,
                       help="Cap the display time of single frame (in seconds)")
 advgroup.add_argument('-x', '--lossy', default=None, type=int,
                       help="Use gifsicle lossy GIF compression mode")
+advgroup.add_argument('-e', '--encoding', default=None,
+                      help="Reencode ttyrec to match terminal (source:target)")
 
 try:
     args = parser.parse_args()
@@ -173,7 +175,8 @@ for util in DEPENDS_ON:
         sys.exit(1)
 
 time_start = time.time()
-tp = ttyplay.TtyPlay(args.input, args.speed)  # Create a tty player
+# Create a tty player
+tp = ttyplay.TtyPlay(args.input, args.speed, args.encoding)
 # Here we do a two-pass run over ttyrec. On 1st pass we get frame
 # lengths from ttyrec and calculate delays for GIF frames.
 delays = tp.compute_framedelays()

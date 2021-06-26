@@ -22,17 +22,19 @@ class TtyPlay(object):
     """
     A class to read, analyze and play ttyrecs
     """
-    def __init__(self, f, speed=1.0):
+    def __init__(self, f, speed=1.0, encoding=None):
         """
         Create a new ttyrec player.
 
         :param f: An open file object or a path to file.
         :param speed: Speed multipier, used to divide delays.
+        :param encoding: Comma-separated source and target terminal encodings.
         """
         if isinstance(f, io.IOBase):
             self.file = f
         else:
             self.file = open(f, 'rb')
+        self.encoding = self._parse_encoding(encoding)
         self.speed = speed  # Multiplier of speed
         self.seconds = 0  # sec field of header
         self.useconds = 0  # usec field of header
@@ -40,6 +42,24 @@ class TtyPlay(object):
         self.frameno = 0  # Number of current frame in file
         self.duration = 0.0  # Computed duration of previous frame
         self.frame = bytes()  # Payload of the frame
+
+    def _parse_encoding(self, encoding):
+        """
+        Parse and validate encoding string.
+
+        :param encoding: Comma-separated source and target terminal encodings.
+        :return: None or list of source and target encodings.
+        """
+        if encoding is not None:
+            encodings = encoding.split(":")
+            if len(encodings) != 2:
+                raise ValueError(
+                    f"Invalid encoding argument: {encoding}, expected two"
+                    f" comma-separated encodings (first for source (ttyrec)"
+                    f" terminal encoding and second for target (this) terminal"
+                    f" encoding."
+                )
+            return encodings
 
     def compute_framelen(self, sec, usec):
         """
@@ -69,6 +89,15 @@ class TtyPlay(object):
                 delays.append(self.duration)
         return delays
 
+    def _reencode_frame(self, frame):
+        """
+        Reencode frame to target terminal encoding (if requested).
+
+        :param frame: Frame content.
+        :return: Reencoded frame content.
+        """
+        return frame.decode(self.encoding[0]).encode(self.encoding[1])
+
     def read_frame(self, loop=False):
         """
         Read a ttyrec frame (header and payload).
@@ -90,6 +119,8 @@ class TtyPlay(object):
         self.frame = self.file.read(length)
         if len(self.frame) < length:
             raise ValueError("Short read: Couldn't read a whole ttyrec frame!")
+        if self.encoding is not None:
+            self.frame = self._reencode_frame(self.frame)
         self.frameno += 1
         if self.frameno > 1:
             self.duration = self.compute_framelen(seconds, useconds)
