@@ -13,7 +13,7 @@ pyttygif was developed with several goals in mind:
 * Speed. While most ttyrec-to-GIF converters are either very slow or have a long post-processing stage, pyttygif is rather quick. It delegates most heavy work to the fast commandline tools (such as convert and gifsicle) and uses multiprocessing to parallelize the work.
 * Modest memory usage. pyttygif doesn't load tons of huge, uncompressed bitmaps into the RAM (at least, not by default). It also doesn't create huge multi-gigabyte temporary directories. Resulting GIFs are also optimized and don't take a lot of disk space.
 * Accuracy. Because it screenshots the running terminal - you can precisely control the appearance of output GIF by configuring your terminal emulator appearance. Also, pyttygif merges too short ttyrec frames, so that resulting GIF looks natural.
-* Flexible. pyttygif already comes with sane defaults, but if you want to adjust something - there's a variety of advanced options. You could adjust GIF optimization level, or trade-off more RAM to reduce the processing time.
+* Flexible. pyttygif already comes with sane defaults, but if you want to adjust something - there's a variety of advanced options. You could adjust GIF optimization level, enable logarithmic time compression or trade-off more RAM to reduce the processing time.
 * Few dependencies. pyttygif is implemented in pure-python and should work on any Linux system with X11 and Python 3. For image processing, it depends on tools, such as xwd, convert (from imagemagick) and gifsicle, which are available in repos of most mainstream distros.
 
 Warning: it's not recommended to move, resize, minimize, overlap with another window or otherwise interact with terminal emulator during the recording of GIF. It could cause artifacts, capturing portions of the overlapped windows and other undesired effects on the resulting GIF image. Or (if the window was minimized), it could fail the conversion outright.
@@ -44,21 +44,21 @@ Finally, you can convert a ttyrec like that:
 
     usage: __main__.py [-h] [-s SPEED] [-l LOOP] [-L LASTFRAME] [-m]
                        [-o {0,1,2,3}] [-S] [-b MAX_BACKLOG] [-D] [-f FPS]
-                       [-c DELAYCAP] [-x LOSSY] [-e ENCODING]
+                       [-c DELAYCAP] [-x LOSSY] [-e ENCODING] [-C [LOGARITHMIC]]
                        input output
-    
+
     Convert ttyrec to GIF animation
-    
-    optional arguments:
+
+    options:
       -h, --help            show this help message and exit
-    
+
     Main options:
       input                 Path to the ttyrec file to convert
       output                Path to save the resulting GIF
       -s SPEED, --speed SPEED
                             Speed multiplier
       -l LOOP, --loop LOOP  Number of times to play the GIF (0 = infinity)
-    
+
     Advanced options:
       -L LASTFRAME, --lastframe LASTFRAME
                             How long to display the last frame
@@ -78,6 +78,8 @@ Finally, you can convert a ttyrec like that:
                             Use gifsicle lossy GIF compression mode
       -e ENCODING, --encoding ENCODING
                             Reencode ttyrec to match terminal (source:target)
+      -C [LOGARITHMIC], --logarithmic [LOGARITHMIC]
+                            Enable logarithmic time compression (default base = e)
 
 For the most basic usage, you only need to specify the required positional arguments (input ttyrec file path and output GIF file path). You can also specify **-s** to pass (floating point) speed multiplier to speed up or slow down the output GIF and **-l** to specify number of times to play the GIF (0 = infinity).
 
@@ -91,7 +93,12 @@ There's also a number of advanced options available.
 * pyttygif doesn't have any way to sync to the terminal emulator (and it also wants to be as much terminal-agnostic as possible), so the only way around this problem is to sleep a fixed amount of time after each displayed frame to give the terminal emulator some time to render the contents. pyttygif defaults to the more or less safe value of 25 FPS (which is 0.04 seconds of sleep after each frame). However, depending on your machine, you might want to override this, for example, with 60 FPS. You can specify the FPS with **-f** option. But beware of setting this value too high - it's possible that pyttygif would actually capture the previous frame, which would cause stutters and frame skips in the output GIF.
 * If there's an excessively long delays in the input ttyrec (such as when user goes away from keyboard) - it's possible to cap such delays by passing **-c** option and specifying a maximum time in seconds that frame can take (floating point number). If any frame exceeds specified time - it's forcibly capped at that time. It defaults to positive infinity, that is, no capping.
 * If you have gifsicle 1.92 or newer, you can use lossy compression mode, which allows to produce even smaller GIFs by passing **-x** option and specify compression level, where higher level produces smaller GIFs at the cost of more artifacts.
-* If your ttyrecs are in different encoding that your terminal (e.g. NetHack IBMgraphics aka CP437), you can re-encode ttyrec on-the-fly by passing **-e** option and specifying ttyrec encoding, followed by comma-separated current terminal encoding (e.g. **-e=cp437:utf-8**).
+* If your ttyrecs are in different encoding that your terminal (e.g. NetHack IBMgraphics aka CP437), you can re-encode ttyrec on-the-fly by passing **-e** option and specifying ttyrec encoding, followed by colon-separated current terminal encoding (e.g. **-e=cp437:utf-8**).
+* If your ttyrecs contain large inactivity periods, you might want to enable logarithmic time compression by passing **-C** option. By default, natural logarithm (base e) is used, like in IPBT, however you may optionally specify any other valid base (e.g. **-C=2** for base 2 logarithm). This option will cause delays to be scaled non-linearly. Extremely large delays will be compressed significantly (e.g. hour-long delay will turn into several seconds), while small delays will have negligible difference. It works together with speed adjustment, too.
+
+Delay transform order:
+
+First, we apply logarithmic time compression (**-C**) if enabled. Then, speed multiplier (**-s**) will be applied to adjust delays to desired speed. Finally, delays are hard-capped (**-c**), so that if any delay exceeds the cap value (which is positive infinity by default), it will be replaced with cap value.
 
 ## License
 

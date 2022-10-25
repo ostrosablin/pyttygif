@@ -16,19 +16,21 @@
 import struct
 import io
 import sys
+import math
 
 
 class TtyPlay(object):
     """
     A class to read, analyze and play ttyrecs
     """
-    def __init__(self, f, speed=1.0, encoding=None):
+    def __init__(self, f, speed=1.0, encoding=None, logbase=None):
         """
         Create a new ttyrec player.
 
         :param f: An open file object or a path to file.
         :param speed: Speed multipier, used to divide delays.
-        :param encoding: Comma-separated source and target terminal encodings.
+        :param encoding: Colon-separated source and target terminal encodings.
+        :param logbase: Perform a logarithmic time compression with base.
         """
         if isinstance(f, io.IOBase):
             self.file = f
@@ -42,6 +44,7 @@ class TtyPlay(object):
         self.frameno = 0  # Number of current frame in file
         self.duration = 0.0  # Computed duration of previous frame
         self.frame = bytes()  # Payload of the frame
+        self.logbase = logbase  # Base of logarithm for log time compression
 
     def _parse_encoding(self, encoding):
         """
@@ -55,7 +58,7 @@ class TtyPlay(object):
             if len(encodings) != 2:
                 raise ValueError(
                     f"Invalid encoding argument: {encoding}, expected two"
-                    f" comma-separated encodings (first for source (ttyrec)"
+                    f" colon-separated encodings (first for source (ttyrec)"
                     f" terminal encoding and second for target (this) terminal"
                     f" encoding."
                 )
@@ -71,7 +74,10 @@ class TtyPlay(object):
         """
         secdiff = sec - self.seconds
         usecdiff = (usec / 1000000.0) - (self.useconds / 1000000.0)
-        duration = (secdiff + usecdiff) / self.speed
+        duration = (secdiff + usecdiff)
+        if self.logbase:
+            duration = math.log(1.0 + duration, self.logbase)
+        duration /= self.speed
         if duration < 0:
             raise ValueError("ttyrec frame is in past")
         return duration

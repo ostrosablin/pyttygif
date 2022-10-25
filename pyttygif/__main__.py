@@ -22,6 +22,7 @@ import subprocess
 import multiprocessing
 import datetime
 import queue
+import math
 
 from pyttygif import ttyplay, capture, gifbuilder
 
@@ -141,6 +142,11 @@ advgroup.add_argument('-x', '--lossy', default=None, type=int,
                       help="Use gifsicle lossy GIF compression mode")
 advgroup.add_argument('-e', '--encoding', default=None,
                       help="Reencode ttyrec to match terminal (source:target)")
+advgroup.add_argument(
+    '-C', '--logarithmic', const=math.e, default=0,
+    type=float, nargs="?",
+    help="Enable logarithmic time compression (default base = e)"
+)
 
 try:
     args = parser.parse_args()
@@ -176,7 +182,7 @@ for util in DEPENDS_ON:
 
 time_start = time.time()
 # Create a tty player
-tp = ttyplay.TtyPlay(args.input, args.speed, args.encoding)
+tp = ttyplay.TtyPlay(args.input, args.speed, args.encoding, args.logarithmic)
 # Here we do a two-pass run over ttyrec. On 1st pass we get frame
 # lengths from ttyrec and calculate delays for GIF frames.
 delays = tp.compute_framedelays()
@@ -309,8 +315,11 @@ giflength = sum(filter(lambda x: round(x * 100) / 100, gifdelays))
 print_err("Stats:\n")
 print_err("Rendered GIF in {0}".format(
     str(datetime.timedelta(seconds=time_end-time_start))))
+origdelays = delays
+if args.logarithmic:
+    origdelays = list(map(lambda x: (args.logarithmic ** x) - 1, delays))
 print_err("ttyrec duration (original speed): {0}".format(
-    str(datetime.timedelta(seconds=sum(delays[:-1])*args.speed))))
+    str(datetime.timedelta(seconds=sum(origdelays[:-1])*args.speed))))
 print_err("ttyrec duration: {0}".format(
     str(datetime.timedelta(seconds=sum(delays[:-1])))))
 print_err("GIF duration: {0}".format(
