@@ -44,7 +44,7 @@ Finally, you can convert a ttyrec like that:
 
     usage: __main__.py [-h] [-s SPEED] [-l LOOP] [-L LASTFRAME] [-m]
                        [-o {0,1,2,3}] [-S] [-b MAX_BACKLOG] [-D] [-f FPS]
-                       [-c DELAYCAP] [-x LOSSY] [-e ENCODING] [-C [LOGARITHMIC]]
+                       [-c DELAYCAP] [-x LOSSY] [-e ENCODING] [-C]
                        input output
 
     Convert ttyrec to GIF animation
@@ -78,8 +78,8 @@ Finally, you can convert a ttyrec like that:
                             Use gifsicle lossy GIF compression mode
       -e ENCODING, --encoding ENCODING
                             Reencode ttyrec to match terminal (source:target)
-      -C [LOGARITHMIC], --logarithmic [LOGARITHMIC]
-                            Enable logarithmic time compression (default base = e)
+      -C, --logarithmic
+                            Enable logarithmic time compression (base = e)
 
 For the most basic usage, you only need to specify the required positional arguments (input ttyrec file path and output GIF file path). You can also specify **-s** to pass (floating point) speed multiplier to speed up or slow down the output GIF and **-l** to specify number of times to play the GIF (0 = infinity).
 
@@ -94,7 +94,7 @@ There's also a number of advanced options available.
 * If there's an excessively long delays in the input ttyrec (such as when user goes away from keyboard) - it's possible to cap such delays by passing **-c** option and specifying a maximum time in seconds that frame can take (floating point number). If any frame exceeds specified time - it's forcibly capped at that time. It defaults to positive infinity, that is, no capping.
 * If you have gifsicle 1.92 or newer, you can use lossy compression mode, which allows to produce even smaller GIFs by passing **-x** option and specify compression level, where higher level produces smaller GIFs at the cost of more artifacts.
 * If your ttyrecs are in different encoding that your terminal (e.g. NetHack IBMgraphics aka CP437), you can re-encode ttyrec on-the-fly by passing **-e** option and specifying ttyrec encoding, followed by colon-separated current terminal encoding (e.g. **-e=cp437:utf-8**).
-* If your ttyrecs contain large inactivity periods, you might want to enable logarithmic time compression by passing **-C** option. By default, natural logarithm (base e) is used, like in IPBT, however you may optionally specify any other valid base (e.g. **-C=2** for base 2 logarithm). This option will cause delays to be scaled non-linearly. Extremely large delays will be compressed significantly (e.g. hour-long delay will turn into several seconds), while small delays will have negligible difference. It works together with speed adjustment, too.
+* If your ttyrecs contain large inactivity periods, you might want to enable logarithmic time compression by passing **-C** option. Like in IPBT, natural logarithm (base e) is used. This option will cause delays to be scaled non-linearly. Extremely large delays will be compressed significantly (e.g. hour-long delay will turn into several seconds), while small delays will have negligible difference. It works together with speed adjustment, too.
 
 Delay transform order:
 

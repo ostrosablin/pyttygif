@@ -142,11 +142,9 @@ advgroup.add_argument('-x', '--lossy', default=None, type=int,
                       help="Use gifsicle lossy GIF compression mode")
 advgroup.add_argument('-e', '--encoding', default=None,
                       help="Reencode ttyrec to match terminal (source:target)")
-advgroup.add_argument(
-    '-C', '--logarithmic', const=math.e, default=0,
-    type=float, nargs="?",
-    help="Enable logarithmic time compression (default base = e)"
-)
+advgroup.add_argument('-C', '--logarithmic', const=math.e, default=0,
+                      action="store_const",
+                      help="Enable logarithmic time compression (base = e)")
 
 try:
     args = parser.parse_args()
